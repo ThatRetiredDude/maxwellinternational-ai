@@ -1,0 +1,30 @@
+MaxwellInternational.ai - Roll Your Own
+Copyright 2026 Jared Maxwell (@ThatRetiredDude on 𝕏) - MaxwellInternational.ai
+Licensed under the Apache License, Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+
+-----------------------------------------------------------------------------
+This product includes the following third-party components and notices
+required by their licenses to be reproduced here.
+-----------------------------------------------------------------------------
+
+Selenium
+Copyright 2011-2026 Software Freedom Conservancy
+Copyright 2004-2011 Selenium committers
+Licensed under the Apache License, Version 2.0.
+
+Requests
+Copyright 2019 Kenneth Reitz
+Licensed under the Apache License, Version 2.0.
+
+webdriver-manager
+Copyright Sergey Pirogov
+Licensed under the Apache License, Version 2.0.
+
+selenium-stealth
+Copyright (c) 2019 berstend
+Copyright (c) 2020 diprajpatra
+Licensed under the MIT License.
+
+questionary
+Copyright 2020 Tom Bocklisch and contributors
+Licensed under the MIT License.

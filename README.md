@@ -1,64 +1,118 @@
-# Astro Starter Kit: Blog
+# MaxwellInternational.ai — Roll Your Own
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/astro-blog-starter-template)
+Data collection scripts for use with the Epstein Library. 
+**2026 Jared Maxwell · @ThatRetiredDude on 𝕏 · MaxwellInternational.ai**
 
-![Astro Template Preview](https://github.com/withastro/astro/assets/2244813/ff10799f-a816-4703-b967-c78997e8323d)
+Licensed under the [Apache License, Version 2.0](LICENSE).
 
-<!-- dash-content-start -->
+---
 
-Create a blog with Astro and deploy it on Cloudflare Workers as a [static website](https://developers.cloudflare.com/workers/static-assets/).
+## Run order
 
-Features:
+Run the programs **in this order** (each step uses the previous step’s output):
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and OpenGraph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
-- ✅ Built-in Observability logging
+1. **GetURLs** → collects PDF URLs into a CSV  
+2. **xTensionProbe** → checks which URLs are media (video/audio/image) and writes a media CSV  
+3. **GetMetaData** → validates and enriches media URLs with metadata (e.g. ffprobe), writes final CSV  
 
-<!-- dash-content-end -->
+---
 
-## Getting Started
+## Prerequisites
 
-Outside of this repo, you can start a new project with this template using [C3](https://developers.cloudflare.com/pages/get-started/c3/) (the `create-cloudflare` CLI):
+- **Python 3** with pip  
+- **Google Chrome** (for Selenium)  
+- **FFmpeg** (for GetMetaData only; on macOS: `brew install ffmpeg`)  
+- Install Python dependencies, e.g.:
+
+  ```bash
+  pip install selenium webdriver-manager selenium-stealth requests questionary
+  ```
+
+  (Or use a `requirements.txt` if you add one.)
+
+---
+
+## 1. GetURLs (`RollYourOwn/GetURLs.py`)
+
+**Purpose:** Opens the DOJ Epstein search page in Chrome, lets you pass any anti-bot/captcha/Queue-IT, then scrapes PDF URLs from the search results (with pagination and resume).
+
+**Input:** None (starts from the live site).
+
+**Output:** `epstein_no_images_pdf_urls.csv` (one column: `URL`).
+
+**On-screen instructions:**
+
+1. A browser opens to the search page. Solve any anti-bot, age gate, captcha, or Queue-IT challenge.
+2. In the search box, enter **“no images produced”** and submit.
+3. Wait for results to load (PDF links visible).
+4. Return to the terminal and press **Enter** to start scraping.
+5. The script will paginate and save progress; you can stop and re-run to resume.
+
+**Run:**
 
 ```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/astro-blog-starter-template
+cd RollYourOwn
+python GetURLs.py
 ```
 
-A live public deployment of this template is available at [https://astro-blog-starter-template.templates.workers.dev](https://astro-blog-starter-template.templates.workers.dev)
+---
 
-## 🚀 Project Structure
+## 2. xTensionProbe (`RollYourOwn/xTensionProbe.py`)
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+**Purpose:** Takes the URL list from GetURLs and checks which links are actually media (video/audio/image) by extension and probing. Uses a short browser session so you can solve challenges once; then it uses cookies for parallel requests. Add to the list of extensions - this goes way back so nothing is off the table. 
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+**Input:** `epstein_no_images_pdf_urls.csv` (from GetURLs).
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
+**Output:** `epstein_media_checked_urls.csv` (columns include `original_url`, `actual_url`, `media_type`, `size_bytes`, `is_tiny`).
 
-Any static assets, like images, can be placed in the `public/` directory.
+**On-screen instructions:**
 
-## 🧞 Commands
+1. When the script runs, select which **file extensions** to scan (e.g. `.mp4`, `.mov`, `.jpg`); confirm with Enter.
+2. Optionally set the number of **concurrent workers** (default 5).
+3. A browser opens. Solve any anti-bot, age gate, Queue-IT, or captcha. Optionally open a direct file URL to confirm access.
+4. When access is clear, press **Enter** in the terminal to export cookies and start probing.
+5. The script will probe URLs and save progress; you can stop and re-run to resume. If you get blocked (e.g. 401 burst), follow the prompt to change VPN and re-do the browser step.
 
-All commands are run from the root of the project, from a terminal:
+**Run:**
 
-| Command                           | Action                                           |
-| :-------------------------------- | :----------------------------------------------- |
-| `npm install`                     | Installs dependencies                            |
-| `npm run dev`                     | Starts local dev server at `localhost:4321`      |
-| `npm run build`                   | Build your production site to `./dist/`          |
-| `npm run preview`                 | Preview your build locally, before deploying     |
-| `npm run astro ...`               | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help`         | Get help using the Astro CLI                     |
-| `npm run build && npm run deploy` | Deploy your production site to Cloudflare        |
-| `npm wrangler tail`               | View real-time logs for all Workers              |
+```bash
+cd RollYourOwn
+python xTensionProbe.py
+```
 
-## 👀 Want to learn more?
+---
 
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+## 3. GetMetaData (`RollYourOwn/GetMetaData.py`)
 
-## Credit
+**Purpose:** Reads the media CSV from xTensionProbe and validates/enriches each media URL using FFmpeg (ffprobe). Supports multiple scan modes (fast partial download, deep scan, etc.) and can rescan invalid files.
 
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+**Input:** `epstein_media_checked_urls.csv` (from xTensionProbe).
+
+**Output:** `epstein_full_metadata.csv` (URLs with metadata and validation result).
+
+**On-screen instructions:**
+
+1. Ensure **FFmpeg** is installed (`ffmpeg -version`). On macOS: `brew install ffmpeg`.
+2. When the script runs, set **worker count** and whether to use **random sleep** between requests.
+3. First run: a browser opens for you to solve challenges and save cookies (same idea as xTensionProbe). Press Enter when done to start.
+4. Choose a **scan mode** (e.g. Fast 5MB, Smart auto-escalate, Deep 100MB, or Custom MB).
+5. The script downloads a portion of each file, runs ffprobe, and writes results. You can rescan invalid files with a different mode when prompted.
+
+**Run:**
+
+```bash
+cd RollYourOwn
+python GetMetaData.py
+```
+
+---
+
+## Summary
+
+| Step | Script        | Input CSV                     | Output CSV                    |
+|------|---------------|-------------------------------|-------------------------------|
+| 1    | GetURLs       | —                             | `epstein_no_images_pdf_urls.csv` |
+| 2    | xTensionProbe | `epstein_no_images_pdf_urls.csv` | `epstein_media_checked_urls.csv` |
+| 3    | GetMetaData   | `epstein_media_checked_urls.csv` | `epstein_full_metadata.csv`   |
+
+Follow the on-screen instructions for each script. Any questions? Contact **@ThatRetiredDude** on 𝕏 or **MaxwellInternational.ai**.
