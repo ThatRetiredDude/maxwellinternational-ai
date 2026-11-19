@@ -1,7 +1,7 @@
 # MaxwellInternational.ai — Roll Your Own
 
 Data collection scripts for use with the Epstein Library. 
-**2026 Jared Maxwell · @ThatRetiredDude on 𝕏 · MaxwellInternational.ai**
+**2026 · @ThatRetiredDude on 𝕏 · MaxwellInternational.ai**
 
 Licensed under the [Apache License, Version 2.0](LICENSE).
 
